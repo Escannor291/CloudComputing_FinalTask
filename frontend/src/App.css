@@ -650,6 +650,36 @@ body {
   border-width: 2px;
 }
 
+.form-hint {
+  display: block;
+  color: #999;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.auth-toggle {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.auth-toggle p {
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.auth-toggle span {
+  color: #4A3933;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.auth-toggle span:hover {
+  color: #5F6A6A;
+}
+
 .form-input-file {
   width: 100%;
   padding: 0.75rem;

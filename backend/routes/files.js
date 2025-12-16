@@ -80,17 +80,22 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     }
 });
 
-// List file
+// List file - hanya tampilkan file milik user yang login
 router.get("/list", async (req, res) => {
     const result = [];
+    const currentUser = req.user.username; // ambil username dari token
+    
     for await (const entity of tableClient.listEntities()) {
-        // Generate fresh SAS URL for each file
-        const blobName = entity.blobName || entity.rowKey; // fallback to rowKey if blobName doesn't exist
-        const sasUrl = generateSasUrl(blobName);
-        result.push({
-            ...entity,
-            url: sasUrl
-        });
+        // Filter: hanya tampilkan file yang di-upload oleh user ini
+        if (entity.uploader === currentUser) {
+            // Generate fresh SAS URL for each file
+            const blobName = entity.blobName || entity.rowKey;
+            const sasUrl = generateSasUrl(blobName);
+            result.push({
+                ...entity,
+                url: sasUrl
+            });
+        }
     }
     res.json(result);
 });
@@ -106,22 +111,38 @@ router.get("/download/:blobName", async (req, res) => {
     }
 });
 
-// Delete file
+// Delete file - hanya bisa hapus file milik sendiri
 router.delete("/delete/:blobName", async (req, res) => {
     try {
         const blobName = req.params.blobName;
+        const currentUser = req.user.username;
+        
+        // Cek apakah file milik user ini
+        let isOwner = false;
+        let entityToDelete = null;
+        
+        const entities = tableClient.listEntities();
+        for await (const entity of entities) {
+            if (entity.blobName === blobName || entity.rowKey === blobName) {
+                if (entity.uploader === currentUser) {
+                    isOwner = true;
+                    entityToDelete = entity;
+                    break;
+                }
+            }
+        }
+        
+        if (!isOwner) {
+            return res.status(403).json({ message: "Anda tidak memiliki izin untuk menghapus file ini" });
+        }
         
         // Delete from Blob Storage
         const blobClient = containerClient.getBlockBlobClient(blobName);
         await blobClient.delete();
         
-        // Delete from Table Storage - find entity first
-        const entities = tableClient.listEntities();
-        for await (const entity of entities) {
-            if (entity.blobName === blobName || entity.rowKey === blobName) {
-                await tableClient.deleteEntity(entity.partitionKey, entity.rowKey);
-                break;
-            }
+        // Delete from Table Storage
+        if (entityToDelete) {
+            await tableClient.deleteEntity(entityToDelete.partitionKey, entityToDelete.rowKey);
         }
         
         res.json({ message: "File berhasil dihapus!" });

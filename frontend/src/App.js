@@ -16,6 +16,12 @@ function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState('all');
   const [courses, setCourses] = useState([]);
+  
+  // State untuk login & register
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [currentUser, setCurrentUser] = useState('');
 
   useEffect(() => {
     // Trigger fade-in animation on mount
@@ -31,17 +37,54 @@ function App() {
   }, [message]);
 
   const login = async () => {
+    if (!username || !password) {
+      setMessage("Username dan password harus diisi!");
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await axios.post(`${API_URL}/api/auth/login`, {
-        username: "admin",
-        password: "admin123"
+        username,
+        password
       });
       setToken(res.data.token);
+      setCurrentUser(username);
       setMessage("Login berhasil!");
       load(res.data.token);
+      setUsername('');
+      setPassword('');
     } catch (error) {
-      setMessage("Login gagal: " + error.message);
+      setMessage("Login gagal: " + (error.response?.data || error.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const register = async () => {
+    if (!username || !password) {
+      setMessage("Username dan password harus diisi!");
+      return;
+    }
+
+    if (password.length < 6) {
+      setMessage("Password minimal 6 karakter!");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await axios.post(`${API_URL}/api/auth/register`, {
+        username,
+        password,
+        role: "user"
+      });
+      setMessage("Registrasi berhasil! Silakan login.");
+      setIsRegisterMode(false);
+      setUsername('');
+      setPassword('');
+    } catch (error) {
+      setMessage("Registrasi gagal: " + (error.response?.data || error.message));
     } finally {
       setLoading(false);
     }
@@ -50,6 +93,7 @@ function App() {
   const logout = () => {
     setToken('');
     setFiles([]);
+    setCurrentUser('');
     setMessage('Logout berhasil!');
   };
 
@@ -127,20 +171,55 @@ function App() {
         <div className="login-container">
           <div className="login-card scale-in">
             <div className="login-header">
-              <h2>Login</h2>
-              <p>Masuk untuk mengakses sistem penyimpanan file</p>
+              <h2>{isRegisterMode ? 'Daftar Akun Baru' : 'Login'}</h2>
+              <p>{isRegisterMode ? 'Buat akun untuk mengelola tugas Anda' : 'Masuk untuk mengakses sistem penyimpanan file'}</p>
             </div>
+            
+            <div className="form-group">
+              <label>Username</label>
+              <input 
+                type="text"
+                className="form-input"
+                placeholder="Masukkan username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && (isRegisterMode ? register() : login())}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Password</label>
+              <input 
+                type="password"
+                className="form-input"
+                placeholder="Masukkan password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && (isRegisterMode ? register() : login())}
+              />
+              {isRegisterMode && <small className="form-hint">Minimal 6 karakter</small>}
+            </div>
+
             <button 
               className="btn btn-primary btn-large pulse-hover" 
-              onClick={login}
+              onClick={isRegisterMode ? register : login}
               disabled={loading}
             >
               {loading ? (
                 <span className="spinner"></span>
               ) : (
-                "Login sebagai Admin"
+                isRegisterMode ? "Daftar" : "Login"
               )}
             </button>
+
+            <div className="auth-toggle">
+              {isRegisterMode ? (
+                <p>Sudah punya akun? <span onClick={() => setIsRegisterMode(false)}>Login di sini</span></p>
+              ) : (
+                <p>Belum punya akun? <span onClick={() => setIsRegisterMode(true)}>Daftar di sini</span></p>
+              )}
+            </div>
+
             {message && <div className="message slide-up">{message}</div>}
           </div>
         </div>
@@ -155,7 +234,7 @@ function App() {
               <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                 ☰
               </button>
-              <span className="navbar-user">admin</span>
+              <span className="navbar-user">{currentUser}</span>
               <button className="btn btn-logout" onClick={logout}>Logout</button>
             </div>
           </nav>
