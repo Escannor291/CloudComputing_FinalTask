@@ -4,12 +4,14 @@ Aplikasi web berbasis cloud untuk mengelola tugas mata kuliah menggunakan Micros
 
 ## 🌟 Fitur Utama
 
-- 🔐 **Autentikasi User** - Login/Register dengan validasi
+- 🔐 **Multi-User System** - Setiap user dapat membuat akun sendiri
+- 📝 **Register & Login** - Sistem autentikasi yang aman dengan bcrypt
+- 🔒 **User Isolation** - Setiap user hanya melihat file mereka sendiri
 - 📤 **Upload File** - Upload tugas dalam berbagai format (PDF, DOCX, JPG, PNG)
 - 📁 **File Management** - Organize file berdasarkan mata kuliah
 - 🔍 **Search & Filter** - Cari file berdasarkan nama atau mata kuliah
 - 📥 **Download File** - Download kembali file yang sudah diupload
-- ❌ **Delete File** - Hapus file yang tidak diperlukan
+- ❌ **Delete File** - Hapus file milik sendiri (tidak bisa hapus file user lain)
 
 ## 🏗️ Arsitektur
 
@@ -147,9 +149,17 @@ az storage blob upload-batch -s build -d '$web' --account-name tugascloudcomputi
 - **Frontend**: https://tugascloudcomputing.z23.web.core.windows.net
 - **Backend API**: https://backend-tugas-akademik.azurewebsites.net
 
-### Test Account
-- **Username**: `admin`
-- **Password**: `admin123`
+### Cara Menggunakan
+1. **Daftar Akun Baru**: Klik "Daftar di sini" pada halaman login
+2. **Buat Username & Password**: Minimal 6 karakter untuk password
+3. **Login**: Gunakan kredensial yang baru dibuat
+4. **Upload Tugas**: Setiap user hanya bisa melihat dan mengelola file mereka sendiri
+
+### Privacy & Security
+- ✅ Setiap user memiliki workspace terpisah
+- ✅ File user lain tidak terlihat dan tidak bisa diakses
+- ✅ Password di-hash dengan bcrypt untuk keamanan
+- ✅ Authentication menggunakan JWT token
 
 ## 📸 Screenshots
 
